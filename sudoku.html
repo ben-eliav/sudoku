@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <link rel="stylesheet" href="style.css">
+</head> 
+
+<body style="background-color:#fafafa;">
+    <div class="main">
+        <div class="container">
+            <h1 style="text-align:center; font-family: Futura, Helvetica, sans-serif"">Sudoku</h1>
+            <table id="sudoku-table">
+                <colgroup><col><col><col>
+                <colgroup><col><col><col>
+                <colgroup><col><col><col>
+                <tbody></tbody>
+            </table>
+            <div class="controls">
+                <div id="solveButton" class="selection"></div>
+                <div id="noteButton" class="noteInactive selection"></div>
+                <div id="newButton" class="newInactive selection"></div>
+            </div>
+        </div>
+        <div class="info">
+            <div class="infoTitle">
+                <div class="infoRules infoTab infoSelected">Rules</div>
+                <div class="infoHints infoTab">Hints</div>
+                <div class="infoAbout infoTab">About</div>
+                <div class="infoUnderline"></div>
+            </div>
+            <div id="infoText">
+                <p>Sudoku is a logic-based, combinatorial number-placement puzzle.</p>
+                <p>The objective is to fill a 9×9 grid with digits so that each column, each row, and each of the nine 3×3 subgrids that compose the grid contain all of the digits from 1 to 9.</p>
+                <p>Click on a cell to select it. Use the number keys to fill in the cell. Use the arrow keys to navigate.</p>
+                <p>Press Escape to deselect a cell.</p>
+                <p>Click on the note button to toggle notes mode.</p>
+                <p>Click on the new button to start a new game.</p>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="sudoku.js"></script>
+    <script>
+        const tableBody = document.querySelector("#sudoku-table tbody");
+        let selectedCell = null;
+        let notes = false;
+
+        function createTable() {
+            for (let row = 0; row < 9; row++) {
+                const tr = document.createElement("tr");
+                for (let col = 0; col < 9; col++) {
+                    const td = document.createElement("td");
+
+                    const div = document.createElement("div");
+                    div.classList.add("cell-content");
+                    div.id = `cell-${row}-${col}`;
+                    div.dataset.row = row;
+                    div.dataset.col = col;
+
+                    div.addEventListener("click", (e) => {
+                        // e.stopPropagation(); // prevent bubbling to parent
+                        if (selectedCell) {
+                            selectedCell.classList.remove("selected");
+                        }
+                        selectedCell = div;
+                        selectedCell.classList.add("selected");
+                    });
+
+                    td.appendChild(div);
+                    tr.appendChild(td);
+                }
+                tableBody.appendChild(tr);
+            }
+        }
+
+        function selectCell(cell) {
+            if (selectedCell) {
+                selectedCell.classList.remove("selected");
+            }
+            selectedCell = cell;
+            selectedCell.classList.add("selected");
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (!selectedCell) return;
+            if (e.key >= "1" && e.key <= "9" && !notes) {
+                selectedCell.textContent = e.key;
+            } else if (e.key === "Backspace" || e.key === "Delete") {
+                selectedCell.textContent = "";
+            }
+            if (e.key === "Escape") {
+                if (selectedCell) {
+                    selectedCell.classList.remove("selected");
+                    selectedCell = null;
+                }
+            }
+            if (e.key == "ArrowLeft" || e.key == "ArrowRight" || e.key == "ArrowUp" || e.key == "ArrowDown") {
+                const row = parseInt(selectedCell.getAttribute("data-row"));
+                const col = parseInt(selectedCell.getAttribute("data-col"));
+                if (e.key === "ArrowLeft" && col > 0) {
+                    selectCell(tableBody.querySelector(`div[data-row="${row}"][data-col="${col - 1}"]`));
+                } else if (e.key === "ArrowRight" && col < 8) {
+                    selectCell(tableBody.querySelector(`div[data-row="${row}"][data-col="${col + 1}"]`));
+                } else if (e.key === "ArrowUp" && row > 0) {
+                    selectCell(tableBody.querySelector(`div[data-row="${row - 1}"][data-col="${col}"]`));
+                } else if (e.key === "ArrowDown" && row < 8) {
+                    selectCell(tableBody.querySelector(`div[data-row="${row + 1}"][data-col="${col}"]`));
+                }
+                // if (selectedCell) {
+                //     selectedCell.classList.add("selected");
+                // }
+            }
+        });
+
+        document.addEventListener("click", (e) => {
+            const container = document.getElementById("optionsDiv");
+            if (container && !container.contains(e.target) && e.target.id !== "newButton") {
+                // If clicked outside the options div, remove it
+                container.parentElement.removeChild(container);
+                const newButton = document.getElementById("newButton");
+                newButton.classList.remove("newActive");
+                newButton.classList.add("newInactive");
+            }
+        });
+
+        document.getElementById("noteButton").addEventListener("click", () => {
+            notes = !notes;
+            noteButton.classList.toggle("noteActive", notes);
+            noteButton.classList.toggle("noteInactive", !notes);
+        });
+
+        // document.getElementById("newButton").addEventListener("click", () => {
+        //     // open a div with a list of options. also, toggle class from newInactive to newActive
+        //     const newButton = document.getElementById("newButton");
+        //     newButton.classList.toggle("newActive");
+        //     newButton.classList.toggle("newInactive");
+        //     if (newButton.classList.contains("newActive")) {
+        //         // Create a new div with options
+        //         const optionsDiv = document.createElement("div");
+        //         const parentDiv = newButton.parentElement;
+                
+        //         optionsDiv.id = "optionsDiv";
+        //         optionsDiv.innerHTML = `
+        //             <div id="easy">Easy</div>
+        //             <div id="medium">Medium</div>
+        //             <div id="hard">Hard</div>
+        //             <div id="custom">Custom</div>
+        //         `;
+        //         parentDiv.appendChild(optionsDiv);
+
+        //         // Add event listeners to the buttons
+        //         document.getElementById("easy").addEventListener("click", () => {
+        //             console.log("Easy selected");
+        //             // Logic for easy level
+        //             newButton.parentElement.removeChild(optionsDiv);
+        //             newButton.classList.remove("newActive");
+        //             newButton.classList.add("newInactive");
+        //         });
+        //         document.getElementById("medium").addEventListener("click", () => {
+        //             console.log("Medium selected");
+        //             // Logic for medium level
+        //             newButton.parentElement.removeChild(optionsDiv);
+        //             newButton.classList.remove("newActive");
+        //             newButton.classList.add("newInactive");
+        //         });
+        //         document.getElementById("hard").addEventListener("click", () => {
+        //             console.log("Hard selected");
+        //             // Logic for hard level
+        //             newButton.parentElement.removeChild(optionsDiv);
+        //             newButton.classList.remove("newActive");
+        //             newButton.classList.add("newInactive");
+        //         });
+        //         document.getElementById("custom").addEventListener("click", () => {
+        //             console.log("Custom selected");
+        //             // Logic for custom level
+        //             newButton.parentElement.removeChild(optionsDiv);
+        //             newButton.classList.remove("newActive");
+        //             newButton.classList.add("newInactive");
+        //         });
+        //     } else {
+        //         const optionsDiv = document.getElementById("optionsDiv");
+        //         if (optionsDiv) {
+        //             newButton.parentElement.removeChild(optionsDiv);
+        //         }
+        //     }
+        // });
+        
+        document.getElementById("newButton").addEventListener("click", () => {
+            const newButton = document.getElementById("newButton");
+            newButton.classList.toggle("newActive");
+            newButton.classList.toggle("newInactive");
+
+            let optionsDiv = document.getElementById("optionsDiv");
+
+            if (newButton.classList.contains("newActive")) {
+                // Create the optionsDiv if it doesn't exist
+                if (!optionsDiv) {
+                    optionsDiv = document.createElement("div");
+                    optionsDiv.id = "optionsDiv";
+                    optionsDiv.innerHTML = `
+                        <div id="easy" class="newOption">Easy</div>
+                        <div id="medium" class="newOption">Medium</div>
+                        <div id="hard" class="newOption">Hard</div>
+                        <div id="custom" class="newOption">Custom</div>
+                    `;
+                    newButton.parentElement.appendChild(optionsDiv);
+
+                    // Add event listeners to the buttons
+                    document.getElementById("easy").addEventListener("click", () => {
+                        console.log("Easy selected");
+                        cleanupOptionsDiv();
+                    });
+                    document.getElementById("medium").addEventListener("click", () => {
+                        console.log("Medium selected");
+                        cleanupOptionsDiv();
+                    });
+                    document.getElementById("hard").addEventListener("click", () => {
+                        console.log("Hard selected");
+                        cleanupOptionsDiv();
+                    });
+                    document.getElementById("custom").addEventListener("click", () => {
+                        console.log("Custom selected");
+                        cleanupOptionsDiv();
+                    });
+                }
+            } else {
+                // Remove the optionsDiv if it exists
+                cleanupOptionsDiv();
+            }
+        });
+
+        function cleanupOptionsDiv() {
+            const optionsDiv = document.getElementById("optionsDiv");
+            if (optionsDiv) {
+                optionsDiv.parentElement.removeChild(optionsDiv);
+            }
+            const newButton = document.getElementById("newButton");
+            newButton.classList.remove("newActive");
+            newButton.classList.add("newInactive");
+        }
+        
+        function updateUnderLine(tab) {
+
+            const underline = document.querySelector(".infoUnderline");
+            const rect = tab.getBoundingClientRect();
+            const containerRect = tab.parentElement.getBoundingClientRect();
+
+            underline.style.left = `${rect.left - containerRect.left}px`;
+            underline.style.width = `${rect.width}px`;
+        }
+        
+        document.querySelectorAll(".infoTab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".infoTab").forEach(t => t.classList.remove("infoSelected"));
+                tab.classList.add("infoSelected");
+                updateUnderLine(tab);
+            });
+        });
+
+        function hints() {
+            return '<p>Hints are not implemented yet.</p>';
+        }
+
+        document.querySelector(".infoHints").addEventListener("click", () => {
+            const hintsText = document.getElementById("infoText");
+            
+            hintsText.innerHTML = hints();
+            updateUnderLine(document.querySelector(".infoHints"));
+        });
+
+        document.querySelector(".infoRules").addEventListener("click", () => {
+            const rulesText = document.getElementById("infoText");
+            rulesText.innerHTML = `
+                <p>Sudoku is a logic-based, combinatorial number-placement puzzle.</p>
+                <p>The objective is to fill a 9×9 grid with digits so that each column, each row, and each of the nine 3×3 subgrids that compose the grid contain all of the digits from 1 to 9.</p>
+                <p>Click on a cell to select it. Use the number keys to fill in the cell. Use the arrow keys to navigate.</p>
+                <p>Press Escape to deselect a cell.</p>
+                <p>Click on the note button to toggle notes mode.</p>
+                <p>Click on the new button to start a new game.</p>
+            `
+            updateUnderLine(document.querySelector(".infoRules"));
+        });
+
+        document.querySelector(".infoAbout").addEventListener("click", () => {
+            const aboutText = document.getElementById("infoText");
+            aboutText.innerHTML = `
+                <p>&copy Ben Eliav, 2025</p>
+            `;
+        });
+
+        updateUnderLine(document.querySelector(".infoRules"));
+        
+        createTable();
+
+    </script>
+</body>
+</html>
