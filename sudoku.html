@@ -11,6 +11,7 @@
     <div class="main">
         <div class="container">
             <h1 style="text-align:center; font-family: Futura, Helvetica, sans-serif"">Sudoku</h1>
+            <h3 style="text-align:center;" id="difficultyLevel">Easy</h3>
             <table id="sudoku-table">
                 <colgroup><col><col><col>
                 <colgroup><col><col><col>
@@ -28,6 +29,7 @@
                 <div class="infoRules infoTab infoSelected">Rules</div>
                 <div class="infoHints infoTab">Hints</div>
                 <div class="infoAbout infoTab">About</div>
+                <div class="infoSettings infoTab">Settings</div>
                 <div class="infoUnderline"></div>
             </div>
             <div id="infoText">
@@ -47,12 +49,14 @@
         const tableBody = document.querySelector("#sudoku-table tbody");
         let selectedCell = null;
         let notes = false;
+        new_sudoku = new Sudoku(createGrid());
 
         function createTable() {
             for (let row = 0; row < 9; row++) {
                 const tr = document.createElement("tr");
                 for (let col = 0; col < 9; col++) {
                     const td = document.createElement("td");
+                    td.classList.add("sudoku-cell");
 
                     const div = document.createElement("div");
                     div.classList.add("cell-content");
@@ -76,6 +80,21 @@
             }
         }
 
+        function fillTable(sudoku) {
+            const cells = tableBody.querySelectorAll("div.cell-content");
+            cells.forEach(cell => {
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                const value = sudoku.grid[row][col];
+                if (value !== 0) {
+                    cell.textContent = value;
+                    cell.classList.add("given");
+                } else {
+                    cell.textContent = "";
+                }
+            });
+        }
+
         function selectCell(cell) {
             if (selectedCell) {
                 selectedCell.classList.remove("selected");
@@ -84,12 +103,82 @@
             selectedCell.classList.add("selected");
         }
 
+        function addNoteTable(cell) {
+            const notesTable = document.createElement("table");
+            notesTable.classList.add("notes-table");
+            for (let i = 0; i <= 2; i++) {
+                const noteRow = document.createElement("tr");
+                for (let j = 1; j <= 3; j++) {
+                    const noteCell = document.createElement("td");
+                    noteCell.classList.add("note", `note-${i*3+j}`);
+                    noteRow.appendChild(noteCell);
+                    notesTable.appendChild(noteRow);
+                }
+            }
+            cell.innerHTML = ""; // Clear the cell
+            cell.appendChild(notesTable);
+        }
+        
+        function optionsEventListeners() {
+            // Add event listeners to the buttons
+            document.getElementById("easy").addEventListener("click", () => {
+                document.getElementById("difficultyLevel").textContent = "Easy";
+                cleanupOptionsDiv();
+            });
+            document.getElementById("medium").addEventListener("click", () => {
+                document.getElementById("difficultyLevel").textContent = "Medium";
+                cleanupOptionsDiv();
+            });
+            document.getElementById("hard").addEventListener("click", () => {
+                document.getElementById("difficultyLevel").textContent = "Hard";
+                cleanupOptionsDiv();
+            });
+            document.getElementById("custom").addEventListener("click", () => {
+                document.getElementById("difficultyLevel").textContent = "Custom";
+                cleanupOptionsDiv();
+            });
+        }
+
+        function cleanupOptionsDiv() {
+            const optionsDiv = document.getElementById("optionsDiv");
+            if (optionsDiv) {
+                optionsDiv.parentElement.removeChild(optionsDiv);
+            }
+            const newButton = document.getElementById("newButton");
+            newButton.classList.remove("newActive");
+            newButton.classList.add("newInactive");
+        }
+        
+        function updateUnderLine(tab) {
+
+            const underline = document.querySelector(".infoUnderline");
+            const rect = tab.getBoundingClientRect();
+            const containerRect = tab.parentElement.getBoundingClientRect();
+
+            underline.style.left = `${rect.left - containerRect.left}px`;
+            underline.style.width = `${rect.width}px`;
+        }
+
+        function hints() {
+            return '<p>Hints are not implemented yet.</p>';
+        }
+        
+        createTable();
+        fillTable(new_sudoku);
+        
         document.addEventListener("keydown", (e) => {
             if (!selectedCell) return;
-            if (e.key >= "1" && e.key <= "9" && !notes) {
-                selectedCell.textContent = e.key;
-            } else if (e.key === "Backspace" || e.key === "Delete") {
-                selectedCell.textContent = "";
+            if (!selectedCell.classList.contains("given")) {
+                if (e.key >= "1" && e.key <= "9" && !notes) {
+                    selectedCell.textContent = e.key;
+                } else if (e.key === "Backspace" || e.key === "Delete") {
+                    selectedCell.textContent = "";
+                } else if (notes && e.key >= "1" && e.key <= "9") {
+                    if (!selectedCell.innerHTML.includes("table")) addNoteTable(selectedCell);
+                    if (selectedCell.querySelector(`.note-${e.key}`).textContent) selectedCell.querySelector(`.note-${e.key}`).textContent = "";
+                    else selectedCell.querySelector(`.note-${e.key}`).textContent = e.key;
+                }
+                
             }
             if (e.key === "Escape") {
                 if (selectedCell) {
@@ -109,9 +198,6 @@
                 } else if (e.key === "ArrowDown" && row < 8) {
                     selectCell(tableBody.querySelector(`div[data-row="${row + 1}"][data-col="${col}"]`));
                 }
-                // if (selectedCell) {
-                //     selectedCell.classList.add("selected");
-                // }
             }
         });
 
@@ -126,6 +212,12 @@
             }
         });
 
+        document.getElementById("solveButton").addEventListener("click", () => {
+            const text = document.getElementById("infoText");
+            text.innerHTML = hints();
+            updateUnderLine(document.querySelector(".infoHints"));
+        });
+        
         document.getElementById("noteButton").addEventListener("click", () => {
             notes = !notes;
             noteButton.classList.toggle("noteActive", notes);
@@ -207,24 +299,7 @@
                         <div id="custom" class="newOption">Custom</div>
                     `;
                     newButton.parentElement.appendChild(optionsDiv);
-
-                    // Add event listeners to the buttons
-                    document.getElementById("easy").addEventListener("click", () => {
-                        console.log("Easy selected");
-                        cleanupOptionsDiv();
-                    });
-                    document.getElementById("medium").addEventListener("click", () => {
-                        console.log("Medium selected");
-                        cleanupOptionsDiv();
-                    });
-                    document.getElementById("hard").addEventListener("click", () => {
-                        console.log("Hard selected");
-                        cleanupOptionsDiv();
-                    });
-                    document.getElementById("custom").addEventListener("click", () => {
-                        console.log("Custom selected");
-                        cleanupOptionsDiv();
-                    });
+                    optionsEventListeners();
                 }
             } else {
                 // Remove the optionsDiv if it exists
@@ -232,26 +307,7 @@
             }
         });
 
-        function cleanupOptionsDiv() {
-            const optionsDiv = document.getElementById("optionsDiv");
-            if (optionsDiv) {
-                optionsDiv.parentElement.removeChild(optionsDiv);
-            }
-            const newButton = document.getElementById("newButton");
-            newButton.classList.remove("newActive");
-            newButton.classList.add("newInactive");
-        }
-        
-        function updateUnderLine(tab) {
 
-            const underline = document.querySelector(".infoUnderline");
-            const rect = tab.getBoundingClientRect();
-            const containerRect = tab.parentElement.getBoundingClientRect();
-
-            underline.style.left = `${rect.left - containerRect.left}px`;
-            underline.style.width = `${rect.width}px`;
-        }
-        
         document.querySelectorAll(".infoTab").forEach(tab => {
             tab.addEventListener("click", () => {
                 document.querySelectorAll(".infoTab").forEach(t => t.classList.remove("infoSelected"));
@@ -259,10 +315,6 @@
                 updateUnderLine(tab);
             });
         });
-
-        function hints() {
-            return '<p>Hints are not implemented yet.</p>';
-        }
 
         document.querySelector(".infoHints").addEventListener("click", () => {
             const hintsText = document.getElementById("infoText");
@@ -291,9 +343,14 @@
             `;
         });
 
+        document.querySelector(".infoSettings").addEventListener("click", () => {
+            const settings = document.getElementById("infoText");
+            settings.innerHTML = `
+                <p>Settings are not implemented yet.</p>
+            `;
+        });
+
         updateUnderLine(document.querySelector(".infoRules"));
-        
-        createTable();
 
     </script>
 </body>
