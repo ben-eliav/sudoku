@@ -1,4 +1,4 @@
-import sudoku
+import python.sudoku as sudoku
 import time
 
 
