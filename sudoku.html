@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sudoku</title>
     <link rel="stylesheet" href="style.css">
+    <script src="sudoku.js"></script>
 </head> 
 
 <body style="background-color:#fafafa;">
@@ -33,23 +34,19 @@
                 <div class="infoUnderline"></div>
             </div>
             <div id="infoText">
-                <p>Sudoku is a logic-based, combinatorial number-placement puzzle.</p>
-                <p>The objective is to fill a 9×9 grid with digits so that each column, each row, and each of the nine 3×3 subgrids that compose the grid contain all of the digits from 1 to 9.</p>
-                <p>Click on a cell to select it. Use the number keys to fill in the cell. Use the arrow keys to navigate.</p>
-                <p>Press Escape to deselect a cell.</p>
-                <p>Click on the note button to toggle notes mode.</p>
-                <p>Click on the new button to start a new game.</p>
             </div>
         </div>
     </div>
 
-
-    <script src="sudoku.js"></script>
     <script>
         const tableBody = document.querySelector("#sudoku-table tbody");
         let selectedCell = null;
         let notes = false;
-        new_sudoku = new Sudoku(createGrid());
+        let updateNotes = true;
+
+        let new_sudoku = new Sudoku(createGrid());
+        let solver = new SudokuBackTracker(new_sudoku);
+        let logicSolver = new LogicSolver(new_sudoku);
 
         function createTable() {
             for (let row = 0; row < 9; row++) {
@@ -103,6 +100,13 @@
             selectedCell.classList.add("selected");
         }
 
+        function deselectCell() {
+            if (selectedCell) {
+                selectedCell.classList.remove("selected");
+                selectedCell = null;
+            }
+        }
+        
         function addNoteTable(cell) {
             const notesTable = document.createElement("table");
             notesTable.classList.add("notes-table");
@@ -163,28 +167,101 @@
             return '<p>Hints are not implemented yet.</p>';
         }
         
+        function check_correct(cell, solution, value) {
+            const row = parseInt(cell.getAttribute("data-row"));
+            const col = parseInt(cell.getAttribute("data-col"));
+            return solution.grid[row][col] === value;
+        }
+        
+        function addNote(note, remove=false) {
+            if (!selectedCell.innerHTML.includes("table")) addNoteTable(selectedCell);
+            if (selectedCell.querySelector(`.note-${note}`).textContent && remove) selectedCell.querySelector(`.note-${note}`).textContent = "";
+            else selectedCell.querySelector(`.note-${note}`).textContent = note;
+        }
+
+        function removeNote(cell, note) {
+            if (cell.querySelector(`.note-${note}`)) {
+                cell.querySelector(`.note-${note}`).textContent = "";
+            }
+        }
+        
+        function fillNotes(logicSolver) {
+            const cells = tableBody.querySelectorAll("div.cell-content");
+            cells.forEach(cell => {
+                if (cell.classList.contains("given")) return; // Skip given cells
+                const row = parseInt(cell.dataset.row);
+                const col = parseInt(cell.dataset.col);
+                const notes = logicSolver.options[`${row},${col}`];
+                selectCell(cell);
+                for (let note of notes) {
+                    addNote(note);
+                }
+
+            });
+            deselectCell();
+        }
+        
+        function clearNotes() {
+            const cells = tableBody.querySelectorAll("div.cell-content");
+            cells.forEach(cell => {
+                if (cell.classList.contains("given")) return; // Skip given cells
+                if (cell.innerHTML.includes("table")) {
+                    cell.innerHTML = ""; // Clear the notes table
+                }
+            });
+        }
+
+        function updateNotesNeighbors(cell, value) {
+            const row = parseInt(cell.getAttribute("data-row"));
+            const col = parseInt(cell.getAttribute("data-col"));
+            houseIndices(row, col).forEach(house => {
+                house.forEach(([r, c]) => {
+                    const neighborCell = document.getElementById(`cell-${r}-${c}`);
+                    if (neighborCell && !neighborCell.classList.contains("given")) {
+                        removeNote(neighborCell, value);
+                    }
+                });
+            });
+        }
+
         createTable();
         fillTable(new_sudoku);
         
+        let start_time = performance.now();
+        let solution = solver.solve();
+        if (solution) {
+            console.log(`Sudoku solved successfully in ${(performance.now() - start_time).toFixed(2)} ms`);
+            console.log("Sudoku solution:");
+            console.log(solver.sudoku.toString());
+        } else {
+            console.log("No solution exists for the given Sudoku puzzle.");
+        }
+        
         document.addEventListener("keydown", (e) => {
+            if (e.key === "n") {
+                document.getElementById("noteButton").click();
+            }
             if (!selectedCell) return;
             if (!selectedCell.classList.contains("given")) {
                 if (e.key >= "1" && e.key <= "9" && !notes) {
                     selectedCell.textContent = e.key;
+                    if (!check_correct(selectedCell, solver.sudoku, parseInt(e.key))) {
+                        selectedCell.classList.add("incorrect");
+                    } else {
+                        if (updateNotes) updateNotesNeighbors(selectedCell, e.key);
+                        selectedCell.classList.remove("incorrect");
+                    }
                 } else if (e.key === "Backspace" || e.key === "Delete") {
                     selectedCell.textContent = "";
+                    selectedCell.classList.remove("incorrect");
                 } else if (notes && e.key >= "1" && e.key <= "9") {
-                    if (!selectedCell.innerHTML.includes("table")) addNoteTable(selectedCell);
-                    if (selectedCell.querySelector(`.note-${e.key}`).textContent) selectedCell.querySelector(`.note-${e.key}`).textContent = "";
-                    else selectedCell.querySelector(`.note-${e.key}`).textContent = e.key;
+                    selectedCell.classList.remove("incorrect");
+                    addNote(e.key, remove=true);
                 }
                 
             }
             if (e.key === "Escape") {
-                if (selectedCell) {
-                    selectedCell.classList.remove("selected");
-                    selectedCell = null;
-                }
+                deselectCell();
             }
             if (e.key == "ArrowLeft" || e.key == "ArrowRight" || e.key == "ArrowUp" || e.key == "ArrowDown") {
                 const row = parseInt(selectedCell.getAttribute("data-row"));
@@ -350,8 +427,11 @@
             `;
         });
 
-        updateUnderLine(document.querySelector(".infoRules"));
+        document.querySelector(".infoRules").click(); // Set default tab to Rules
+
+        fillNotes(logicSolver);
 
     </script>
+    <script src="qqwing-main-1.3.4.js"></script>
 </body>
 </html>

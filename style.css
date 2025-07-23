@@ -171,12 +171,13 @@ tr:first-child .sudoku-cell {
 .infoTab {
     font-size: 30px;
     display: inline-block;
-    width: 120px;
     text-align: center;
     border-radius: 3px;
     cursor: pointer;
     padding-bottom: 5px;
     padding-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
 }
 
 .infoTab:hover {
@@ -214,4 +215,8 @@ tr:first-child .sudoku-cell {
     vertical-align: middle;
     width: 33%;
     height: 33%;
+}
+
+.incorrect {
+    color: #ac0000;
 }

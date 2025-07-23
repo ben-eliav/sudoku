@@ -300,15 +300,15 @@ function createGrid() {
   // --- Example ---
   const grid = createGrid();
   
-  const sudoku = new Sudoku(grid);
-  console.log(sudoku.toString());
-  const solver = new LogicSolver(sudoku);
-  if (solver.solve()) {
-    console.log("Sudoku solved:");
-    console.log(sudoku.toString());
-  } else {
-    console.log("No solution found.");
-    console.log(sudoku.toString());
-    console.log(solver.options);
-  }
+//   const sudoku = new Sudoku(grid);
+//   console.log(sudoku.toString());
+//   const solver = new LogicSolver(sudoku);
+//   if (solver.solve()) {
+//     console.log("Sudoku solved:");
+//     console.log(sudoku.toString());
+//   } else {
+//     console.log("No solution found.");
+//     console.log(sudoku.toString());
+//     console.log(solver.options);
+//   }
   
